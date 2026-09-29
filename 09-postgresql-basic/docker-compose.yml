@@ -1,0 +1,97 @@
+# docker-compose.yml
+#
+# Simple PostgreSQL Docker Compose example for classroom use.
+#
+# Start:
+#   docker compose up -d
+#
+# Check:
+#   docker compose ps
+#
+# Connect:
+#   docker compose exec db psql -U classroom -d framework_demo
+#
+# Stop:
+#   docker compose down
+
+
+services:
+
+  # -------------------------------------------------------
+  # PostgreSQL Database Service
+  # -------------------------------------------------------
+  db:
+
+    # Use the official PostgreSQL 16 Docker image.
+    image: postgres:16
+
+    # Give the container a recognizable name.
+    container_name: framework-postgres
+
+    # Environment variables used when PostgreSQL
+    # initializes the database for the first time.
+    environment:
+
+      # Name of the database that PostgreSQL creates.
+      POSTGRES_DB: framework_demo
+
+      # Username used to connect to PostgreSQL.
+      POSTGRES_USER: classroom
+
+      # Password for the classroom user.
+      #
+      # This is acceptable for a local classroom demo.
+      # Production applications should use secrets
+      # or environment variables instead.
+      POSTGRES_PASSWORD: classroom
+
+    # Map a port on the local computer to PostgreSQL's
+    # port inside the Docker container.
+    #
+    # Format:
+    #   HOST_PORT:CONTAINER_PORT
+    ports:
+      - "5432:5432"
+
+    # Volumes allow data/files to exist outside the
+    # temporary container filesystem.
+    volumes:
+
+      # Preserve PostgreSQL database data even when
+      # the container is stopped and restarted.
+      - postgres_data:/var/lib/postgresql/data
+
+      # Make the local sql/ directory available inside
+      # the container at /sql.
+      #
+      # "ro" means read-only.
+      - ./sql:/sql:ro
+
+    # Check periodically whether PostgreSQL is ready
+    # to accept database connections.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U classroom -d framework_demo"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    # Restart the container automatically unless
+    # it was intentionally stopped.
+    restart: unless-stopped
+
+
+# ---------------------------------------------------------
+# Docker Volumes
+# ---------------------------------------------------------
+
+volumes:
+
+  # Docker manages this volume.
+  #
+  # PostgreSQL stores its database files here so that
+  # normal container restarts do not erase the database.
+  postgres_data:
